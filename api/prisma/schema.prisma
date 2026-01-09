@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  WORKER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model User {
+  run          String   @id // RUN chileno sin puntos ni guión, ej: "12345678K"
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CUSTOMER)
+  isActive     Boolean  @default(true)
+  fullName     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders       Order[]
+  audits       AuditLog[] @relation("ActorAudits")
+  addresses    Address[]
+}
+
+model Region {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  cities    City[]
+}
+
+model City {
+  id        String   @id @default(cuid())
+  name      String
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id])
+  addresses Address[]
+
+  @@unique([name, regionId])
+  @@index([regionId])
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userRun   String
+  user      User    @relation(fields: [userRun], references: [run])
+  street    String
+  cityId    String
+  city      City    @relation(fields: [cityId], references: [id])
+  zip       String
+  isDefault Boolean @default(false)
+
+  @@index([userRun])
+  @@index([cityId])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  products  Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Int
+  image       String
+  stock       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  orderItems  OrderItem[]
+
+  @@index([isActive])
+  @@index([categoryId])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+
+  // invitado: userRun nullable
+  userRun       String?
+  user          User?       @relation(fields: [userRun], references: [run])
+
+  // guardar email (para invitado y para logged)
+  customerEmail String
+
+  status        OrderStatus @default(PENDING)
+  total         Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  // Snapshot of address
+  shippingAddress Json?
+
+  // Webpay
+  webpayToken   String?   @unique
+  paymentStatus String?   // "AUTHORIZED", "FAILED", "REVERSED"
+
+  items         OrderItem[]
+  otps          OrderOtp[]
+
+  @@index([userRun])
+  @@index([status])
+  @@index([customerEmail])
+  @@index([webpayToken])
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  order         Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId     String
+  product       Product @relation(fields: [productId], references: [id])
+
+  qty           Int
+  priceSnapshot Int
+}
+
+model OrderOtp {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int      @default(0)
+  lastSentAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([orderId])
+  @@index([email])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorRun  String
+  actor     User     @relation("ActorAudits", fields: [actorRun], references: [run])
+
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([actorRun])
+  @@index([action])
+  @@index([entity])
+}
