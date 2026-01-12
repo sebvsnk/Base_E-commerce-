@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../utils/error";
 import { useEffect, useState } from "react";
 import AdminNav from "./AdminNav";
 import { listAudits, type AuditLog } from "../../services/admin";
@@ -14,8 +15,8 @@ export default function AdminAuditsPage() {
       setError(null);
       const data = await listAudits(newLimit);
       setLogs(data);
-    } catch (e: any) {
-      setError(e?.message ?? "Error cargando auditorías");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error cargando auditorías");
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 import rateLimit from "express-rate-limit";
+import { cleanRun, isValidRun } from "../lib/run-validator";
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -18,6 +19,7 @@ export const authRouter = Router();
 
 authRouter.post("/register", async (req, res) => {
   const parsed = z.object({
+    run: z.string().min(8),
     email: z.string().email(),
     password: z.string().min(6),
     fullName: z.string().min(2).optional(),
@@ -25,19 +27,29 @@ authRouter.post("/register", async (req, res) => {
 
   if (!parsed.success) return res.status(400).json({ message: "Invalid body" });
 
-  const { email, password, fullName } = parsed.data;
+  const { run, email, password, fullName } = parsed.data;
 
-  const exists = await prisma.user.findUnique({ where: { email } });
-  if (exists) return res.status(409).json({ message: "Email already exists" });
+  // Validate Chilean RUN
+  if (!isValidRun(run)) {
+    return res.status(400).json({ message: "Invalid RUN" });
+  }
+
+  const cleanedRun = cleanRun(run);
+
+  const existsEmail = await prisma.user.findUnique({ where: { email } });
+  if (existsEmail) return res.status(409).json({ message: "Email already exists" });
+
+  const existsRun = await prisma.user.findUnique({ where: { run: cleanedRun } });
+  if (existsRun) return res.status(409).json({ message: "RUN already exists" });
 
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.create({
-    data: { email, passwordHash, fullName, role: "CUSTOMER" },
-    select: { id: true, email: true, role: true, fullName: true },
+    data: { run: cleanedRun, email, passwordHash, fullName, role: "CUSTOMER" },
+    select: { run: true, email: true, role: true, fullName: true },
   });
 
-  const token = jwt.sign({ role: user.role }, JWT_SECRET, { subject: user.id, expiresIn: "7d" });
+  const token = jwt.sign({ role: user.role }, JWT_SECRET, { subject: user.run, expiresIn: "7d" });
   res.status(201).json({ token, user });
 });
 
@@ -57,6 +69,6 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
-  const token = jwt.sign({ role: user.role }, JWT_SECRET, { subject: user.id, expiresIn: "7d" });
-  res.json({ token, user: { id: user.id, email: user.email, role: user.role, fullName: user.fullName } });
+  const token = jwt.sign({ role: user.role }, JWT_SECRET, { subject: user.run, expiresIn: "7d" });
+  res.json({ token, user: { run: user.run, email: user.email, role: user.role, fullName: user.fullName } });
 });

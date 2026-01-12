@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/error";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { formatCurrency } from "../utils/currency";
@@ -26,8 +27,8 @@ export default function GuestOrderPage() {
         }
         const data = await getGuestOrder(orderId, guestToken);
         if (!cancelled) setOrder(data);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Error cargando orden");
+      } catch (e: unknown) {
+        if (!cancelled) setError(getErrorMessage(e) || "Error cargando orden");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -55,9 +56,9 @@ export default function GuestOrderPage() {
           <div className="cart__list" style={{ marginTop: 10 }}>
             {order.items.map((it, idx) => (
               <div key={idx} className="cart__row" style={{ gridTemplateColumns: "90px 1fr 90px" }}>
-                <img className="cart__img" src={it.product.image} alt={it.product.name} />
+                <img className="cart__img" src={it.product?.image || ''} alt={it.product?.name || 'Product'} />
                 <div>
-                  <strong>{it.product.name}</strong>
+                  <strong>{it.product?.name || it.productId}</strong>
                   <div className="muted">{formatCurrency(it.priceSnapshot)} x {it.qty}</div>
                 </div>
                 <div className="cart__subtotal">{formatCurrency(it.priceSnapshot * it.qty)}</div>

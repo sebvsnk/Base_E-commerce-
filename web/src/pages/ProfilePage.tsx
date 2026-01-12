@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/error";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/auth-context";
@@ -7,8 +8,8 @@ import { formatCurrency } from "../utils/currency";
 
 export default function ProfilePage() {
   const { user, isAuthed, logout } = useAuth();
-  const location = useLocation() as any;
-  const toast = location?.state?.toast as string | undefined;
+  const location = useLocation() as { state?: { toast?: string } };
+  const toast = location?.state?.toast;
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -36,8 +37,8 @@ export default function ProfilePage() {
           setOrders(ordersData);
           setAddresses(addressesData);
         }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Error cargando datos");
+      } catch (e: unknown) {
+        if (!cancelled) setError(getErrorMessage(e) || "Error cargando datos");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -55,8 +56,8 @@ export default function ProfilePage() {
       setNewAddress({ street: "", city: "", state: "", zip: "", country: "Chile" });
       const fresh = await listAddresses();
       setAddresses(fresh);
-    } catch (e: any) {
-      alert(e.message || "Error al guardar dirección");
+    } catch (e: unknown) {
+      alert(getErrorMessage(e) || "Error al guardar dirección");
     }
   };
 

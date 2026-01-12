@@ -7,9 +7,10 @@ const connectionString = process.env.DATABASE_URL!;
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
 async function main() {
+  const run = process.env.ADMIN_RUN!;
   const email = process.env.ADMIN_EMAIL!;
   const password = process.env.ADMIN_PASSWORD!;
-  if (!email || !password) throw new Error("Missing ADMIN_EMAIL/ADMIN_PASSWORD");
+  if (!run || !email || !password) throw new Error("Missing ADMIN_RUN/ADMIN_EMAIL/ADMIN_PASSWORD");
 
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) {
@@ -19,7 +20,7 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(password, 12);
   await prisma.user.create({
-    data: { email, passwordHash, role: "ADMIN", isActive: true, fullName: "Admin" },
+    data: { run, email, passwordHash, role: "ADMIN", isActive: true, fullName: "Admin" },
   });
 
   console.log("Admin creado:", email);

@@ -26,7 +26,7 @@ async function computeTotal(items: { productId: string; qty: number }[]) {
   const products = await prisma.product.findMany({ where: { id: { in: ids }, isActive: true } });
   if (products.length !== ids.length) throw new Error("Invalid products");
 
-  const map = new Map(products.map(p => [p.id, p]));
+  const map = new Map(products.map((p) => [p.id, p]));
 
   // Check stock
   for (const item of items) {
@@ -46,13 +46,13 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
   const parsed = z.object({ items: itemsSchema }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid body" });
 
-  const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+  const user = await prisma.user.findUnique({ where: { run: req.user!.run } });
   if (!user) return res.status(401).json({ message: "User not found" });
 
   const { items } = parsed.data;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Re-fetch and lock products (or just check stock in transaction)
       // For simplicity, we'll trust computeTotal but we should ideally lock.
       // In Prisma, we can just update and check count, or read first.
@@ -64,11 +64,11 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
       // 2. Create Order
       const order = await tx.order.create({
         data: {
-          userId: user.id,
+          userRun: user.run,
           customerEmail: user.email,
           total: computed.total,
           items: {
-            create: items.map(it => ({
+            create: items.map((it: any) => ({
               productId: it.productId,
               qty: it.qty,
               priceSnapshot: computed.map.get(it.productId)!.price,
@@ -98,7 +98,7 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
 // CUSTOMER: mis órdenes
 ordersRouter.get("/me", requireAuth, async (req: Request, res) => {
   const orders = await prisma.order.findMany({
-    where: { userId: req.user!.id },
+    where: { userRun: req.user!.run },
     include: { items: { include: { product: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -113,7 +113,7 @@ ordersRouter.get("/", requireAuth, requireRole("ADMIN", "WORKER"), async (req, r
   const [total, orders] = await Promise.all([
     prisma.order.count(),
     prisma.order.findMany({
-      include: { items: { include: { product: true } }, user: { select: { id: true, email: true, role: true } } },
+      include: { items: { include: { product: true } }, user: { select: { run: true, email: true, role: true } } },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -134,7 +134,7 @@ ordersRouter.patch("/:id/status", requireAuth, requireRole("ADMIN", "WORKER"), a
   const order = await prisma.order.update({ where: { id: req.params.id }, data: { status: parsed.data.status } });
 
   await prisma.auditLog.create({
-    data: { actorId: req.user!.id, action: "ORDER_STATUS_UPDATE", entity: "Order", entityId: order.id, meta: { status: parsed.data.status } },
+    data: { actorRun: req.user!.run, action: "ORDER_STATUS_UPDATE", entity: "Order", entityId: order.id, meta: { status: parsed.data.status } },
   });
 
   res.json(order);
@@ -152,18 +152,18 @@ ordersRouter.post("/guest", otpLimiter, async (req, res) => {
   const { customerEmail, items } = parsed.data;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       let computed;
       try { computed = await computeTotal(items); }
       catch (e: any) { throw new Error(e.message || "Invalid products"); }
 
       const order = await tx.order.create({
         data: {
-          userId: null,
+          userRun: null,
           customerEmail,
           total: computed.total,
           items: {
-            create: items.map(it => ({
+            create: items.map((it: any) => ({
               productId: it.productId,
               qty: it.qty,
               priceSnapshot: computed.map.get(it.productId)!.price,

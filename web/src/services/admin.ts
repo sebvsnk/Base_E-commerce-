@@ -18,7 +18,7 @@ export type AuditLog = {
   action: string;
   entity: string;
   entityId: string | null;
-  meta: any;
+  meta: Record<string, unknown> | null;
   createdAt: string;
 };
 

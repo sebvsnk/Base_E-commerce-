@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useCart } from "../features/cart/cart-context";
 
@@ -12,7 +12,7 @@ export default function WebpayReturnPage() {
 
     useEffect(() => {
         if (status === "success") {
-            dispatch({ type: "CLEAR_CART" });
+            dispatch({ type: "CLEAR" });
         }
     }, [status, dispatch]);
 

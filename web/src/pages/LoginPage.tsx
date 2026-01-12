@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/error";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/auth-context";
@@ -34,8 +35,8 @@ export default function LoginPage() {
         await register(email.trim(), password, fullName.trim() || undefined);
       }
       navigate("/profile");
-    } catch (e: any) {
-      setError(e?.message ?? "Error");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error");
     } finally {
       setLoading(false);
     }

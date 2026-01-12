@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Product } from "../../services/products";
 import { listPublicProducts } from "../../services/products";
+import { getErrorMessage } from "../../utils/error";
 
 export function useProducts(categoryId?: string) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -14,8 +15,8 @@ export function useProducts(categoryId?: string) {
         setLoading(true);
         const response = await listPublicProducts(categoryId);
         if (!cancelled) setProducts(response.data ?? []);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Error cargando productos");
+      } catch (e: unknown) {
+        if (!cancelled) setError(getErrorMessage(e) || "Error cargando productos");
       } finally {
         if (!cancelled) setLoading(false);
       }

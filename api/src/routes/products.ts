@@ -72,7 +72,7 @@ productsRouter.post("/", requireAuth, requireRole("ADMIN", "WORKER"), async (req
 
   await prisma.auditLog.create({
     data: {
-      actorId: req.user!.id,
+      actorRun: req.user!.run,
       action: "PRODUCT_CREATE",
       entity: "Product",
       entityId: p.id,
@@ -104,7 +104,7 @@ productsRouter.patch("/:id", requireAuth, requireRole("ADMIN", "WORKER"), async 
 
   await prisma.auditLog.create({
     data: {
-      actorId: req.user!.id,
+      actorRun: req.user!.run,
       action: "PRODUCT_UPDATE",
       entity: "Product",
       entityId: p.id,
@@ -123,7 +123,7 @@ productsRouter.post("/:id/disable", requireAuth, requireRole("ADMIN", "WORKER"),
   });
 
   await prisma.auditLog.create({
-    data: { actorId: req.user!.id, action: "PRODUCT_DISABLE", entity: "Product", entityId: p.id },
+    data: { actorRun: req.user!.run, action: "PRODUCT_DISABLE", entity: "Product", entityId: p.id },
   });
 
   res.json(p);

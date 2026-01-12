@@ -4,13 +4,20 @@ export type CartOrderItem = { productId: string; qty: number };
 
 export type OrderStatus = "PENDING" | "PAID" | "CANCELLED";
 
+export type OrderItem = { 
+  qty: number; 
+  priceSnapshot: number; 
+  productId: string;
+  product?: { id: string; name: string; image: string } 
+};
+
 export type Order = {
   id: string;
   status: OrderStatus;
   total: number;
   customerEmail: string;
   createdAt: string;
-  items: Array<{ qty: number; priceSnapshot: number; product: { id: string; name: string; image: string } }>;
+  items: OrderItem[];
 };
 
 export async function createGuestOrder(customerEmail: string, items: CartOrderItem[]) {
@@ -36,7 +43,7 @@ export async function verifyGuestOtp(orderId: string, email: string, code: strin
 
 export async function getGuestOrder(orderId: string, guestToken: string) {
   // no apiFetch because we want to pass a different token than auth
-  const API_URL = ((import.meta as any).env?.VITE_API_URL as string | undefined) ?? "/api";
+  const API_URL = ((import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL) ?? "/api";
 
   const res = await fetch(`${API_URL.replace(/\/$/, "")}/orders/guest/${orderId}`, {
     headers: { Authorization: `Bearer ${guestToken}` },

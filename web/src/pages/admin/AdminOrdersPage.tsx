@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../utils/error";
 import { useEffect, useMemo, useState } from "react";
 import AdminNav from "./AdminNav";
 import { listAdminOrders, updateOrderStatus, type AdminOrder, type OrderStatus } from "../../services/orders";
@@ -21,8 +22,8 @@ export default function AdminOrdersPage() {
       setError(null);
       const data = await listAdminOrders();
       setOrders(data);
-    } catch (e: any) {
-      setError(e?.message ?? "Error cargando órdenes");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error cargando órdenes");
     } finally {
       setLoading(false);
     }
@@ -45,8 +46,8 @@ export default function AdminOrdersPage() {
       setLoading(true);
       await updateOrderStatus(orderId, status);
       await refresh();
-    } catch (e: any) {
-      setError(e?.message ?? "Error actualizando estado");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error actualizando estado");
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export default function AdminOrdersPage() {
             {o.items?.length ? (
               <div style={{ marginTop: 12 }}>
                 <div className="muted" style={{ marginBottom: 8 }}>Items</div>
-                {o.items.map((it: any, idx: number) => (
+                {o.items.map((it, idx: number) => (
                   <div key={idx} className="summary__row">
                     <span>{it.product?.name ?? it.productId} x {it.qty}</span>
                     <strong>{formatCurrency(it.qty * it.priceSnapshot)}</strong>

@@ -8,7 +8,7 @@ export const usersRouter = Router();
 // Get my addresses
 usersRouter.get("/me/addresses", requireAuth, async (req: Request, res) => {
     const addresses = await prisma.address.findMany({
-        where: { userId: req.user!.id },
+        where: { userRun: req.user!.run },
         orderBy: { isDefault: "desc" }, // Default first
     });
     res.json(addresses);
@@ -18,10 +18,8 @@ usersRouter.get("/me/addresses", requireAuth, async (req: Request, res) => {
 usersRouter.post("/me/addresses", requireAuth, async (req: Request, res) => {
     const parsed = z.object({
         street: z.string().min(5),
-        city: z.string().min(2),
-        state: z.string().min(2),
+        cityId: z.string().min(1),
         zip: z.string().min(4),
-        country: z.string().min(2),
         isDefault: z.boolean().optional(),
     }).safeParse(req.body);
 
@@ -30,14 +28,14 @@ usersRouter.post("/me/addresses", requireAuth, async (req: Request, res) => {
     // If setting as default, unset others
     if (parsed.data.isDefault) {
         await prisma.address.updateMany({
-            where: { userId: req.user!.id },
+            where: { userRun: req.user!.run },
             data: { isDefault: false },
         });
     }
 
     const address = await prisma.address.create({
         data: {
-            userId: req.user!.id,
+            userRun: req.user!.run,
             ...parsed.data,
         },
     });

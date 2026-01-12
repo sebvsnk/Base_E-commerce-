@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/error";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { resendGuestOtp, verifyGuestOtp } from "../services/orders";
@@ -39,8 +40,8 @@ export default function GuestVerifyPage() {
       // ya verificado: limpiamos carrito
       dispatch({ type: "CLEAR" });
       navigate(`/guest/order/${orderId}`);
-    } catch (e: any) {
-      setError(e?.message ?? "Código inválido");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Código inválido");
     } finally {
       setLoading(false);
     }
@@ -57,8 +58,8 @@ export default function GuestVerifyPage() {
       setLoading(true);
       const r = await resendGuestOtp(orderId, email);
       setInfo(r.message);
-    } catch (e: any) {
-      setError(e?.message ?? "No se pudo reenviar");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "No se pudo reenviar");
     } finally {
       setLoading(false);
     }

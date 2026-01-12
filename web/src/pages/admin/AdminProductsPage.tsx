@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../utils/error";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "../../services/products";
@@ -18,9 +19,9 @@ export default function AdminProductsPage() {
     try {
       setLoading(true);
       const data = await listAdminProducts();
-      setProducts(data);
-    } catch (e: any) {
-      setError(e?.message ?? "Error cargando productos");
+      setProducts(data.data);
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error cargando productos");
     } finally {
       setLoading(false);
     }
@@ -53,8 +54,8 @@ export default function AdminProductsPage() {
       setImage("");
       setPrice(0);
       await refresh();
-    } catch (e: any) {
-      setError(e?.message ?? "Error creando producto");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error creando producto");
     } finally {
       setLoading(false);
     }
@@ -70,8 +71,8 @@ export default function AdminProductsPage() {
         await updateProduct(p.id, { isActive: true });
       }
       await refresh();
-    } catch (e: any) {
-      setError(e?.message ?? "Error actualizando");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error actualizando");
     } finally {
       setLoading(false);
     }

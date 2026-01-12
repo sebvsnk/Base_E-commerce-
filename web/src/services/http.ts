@@ -2,7 +2,7 @@ import { loadAuth } from "../features/auth/auth-storage";
 
 // Prefer VITE_API_URL from .env, otherwise default to "/api".
 // With the Vite dev proxy configured, "/api" is forwarded to the backend.
-const API_URL = ((import.meta as any).env?.VITE_API_URL as string | undefined) ?? "/api";
+const API_URL = ((import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL) ?? "/api";
 
 function baseUrl() {
   return API_URL.replace(/\/$/, "");

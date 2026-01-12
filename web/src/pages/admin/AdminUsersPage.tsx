@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../utils/error";
 import { useEffect, useState } from "react";
 import AdminNav from "./AdminNav";
 import { createUser, listUsers, resetUserPassword, updateUser, type AdminUser, type Role } from "../../services/admin";
@@ -18,8 +19,8 @@ export default function AdminUsersPage() {
       setError(null);
       const data = await listUsers();
       setUsers(data);
-    } catch (e: any) {
-      setError(e?.message ?? "Error cargando usuarios");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error cargando usuarios");
     } finally {
       setLoading(false);
     }
@@ -42,8 +43,8 @@ export default function AdminUsersPage() {
       setPassword("");
       setRole("CUSTOMER");
       await refresh();
-    } catch (e: any) {
-      setError(e?.message ?? "Error creando usuario");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error creando usuario");
     } finally {
       setLoading(false);
     }
@@ -54,8 +55,8 @@ export default function AdminUsersPage() {
       setLoading(true);
       await updateUser(u.id, { isActive: !u.isActive });
       await refresh();
-    } catch (e: any) {
-      setError(e?.message ?? "Error actualizando");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error actualizando");
     } finally {
       setLoading(false);
     }
@@ -66,8 +67,8 @@ export default function AdminUsersPage() {
       setLoading(true);
       await updateUser(u.id, { role: newRole });
       await refresh();
-    } catch (e: any) {
-      setError(e?.message ?? "Error actualizando rol");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error actualizando rol");
     } finally {
       setLoading(false);
     }
@@ -85,8 +86,8 @@ export default function AdminUsersPage() {
       await resetUserPassword(u.id, newPass);
       await refresh();
       alert("Contraseña actualizada");
-    } catch (e: any) {
-      setError(e?.message ?? "Error reseteando contraseña");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error reseteando contraseña");
     } finally {
       setLoading(false);
     }

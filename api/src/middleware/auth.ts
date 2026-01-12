@@ -12,7 +12,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { sub: string; role: Role };
-    req.user = { id: payload.sub, role: payload.role };
+    req.user = { run: payload.sub, role: payload.role };
     return next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });

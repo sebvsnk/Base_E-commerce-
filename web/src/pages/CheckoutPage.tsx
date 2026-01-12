@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/error";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../features/cart/cart-context";
@@ -48,8 +49,8 @@ export default function CheckoutPage() {
       const resp = await createGuestOrder(email.trim(), items);
       // guardamos el email para la pantalla OTP
       navigate(`/guest/verify/${resp.orderId}?email=${encodeURIComponent(email.trim())}`);
-    } catch (e: any) {
-      setError(e?.message ?? "Error al crear la orden");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Error al crear la orden");
     } finally {
       setLoading(false);
     }
@@ -136,8 +137,8 @@ export default function CheckoutPage() {
                 // 3. Redirect
                 window.location.href = `${data.url}?token_ws=${data.token}`;
 
-              } catch (e: any) {
-                setError(e.message || "Error");
+              } catch (e: unknown) {
+                setError(getErrorMessage(e) || "Error");
                 setLoading(false);
               }
             }}
