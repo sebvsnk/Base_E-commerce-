@@ -54,7 +54,7 @@ webpayRouter.post("/create", async (req, res) => {
         });
 
         res.json({ url: response.url, token: response.token });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e);
         res.status(500).json({ message: "Error creating Webpay transaction" });
     }
@@ -107,7 +107,7 @@ webpayRouter.all("/commit", async (req, res) => {
             return res.redirect(`${process.env.FRONTEND_URL ?? "http://localhost:5173"}/webpay/return?status=failed`);
         }
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("Webpay Commit Error:", e);
         // If token was already committed, it throws.
         return res.redirect(`${process.env.FRONTEND_URL ?? "http://localhost:5173"}/webpay/return?status=error&msg=CommitError`);

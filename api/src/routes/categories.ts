@@ -37,8 +37,8 @@ categoriesRouter.post("/", requireAuth, requireRole("ADMIN", "WORKER"), async (r
         });
 
         res.status(201).json(category);
-    } catch (e: any) {
-        if (e.code === 'P2002') {
+    } catch (e: unknown) {
+        if (typeof e === 'object' && e !== null && 'code' in e && (e as {code: string}).code === 'P2002') {
             return res.status(409).json({ message: "Category name or slug already exists" });
         }
         res.status(500).json({ message: "Internal server error" });
@@ -71,8 +71,8 @@ categoriesRouter.patch("/:id", requireAuth, requireRole("ADMIN", "WORKER"), asyn
         });
 
         res.json(category);
-    } catch (e: any) {
-        if (e.code === 'P2002') {
+    } catch (e: unknown) {
+        if (typeof e === 'object' && e !== null && 'code' in e && (e as {code: string}).code === 'P2002') {
             return res.status(409).json({ message: "Category name or slug already exists" });
         }
         res.status(500).json({ message: "Internal server error" });
@@ -94,8 +94,8 @@ categoriesRouter.delete("/:id", requireAuth, requireRole("ADMIN", "WORKER"), asy
         });
 
         res.json({ message: "Category deleted" });
-    } catch (e: any) {
-        if (e.code === 'P2003') {
+    } catch (e: unknown) {
+        if (typeof e === 'object' && e !== null && 'code' in e && (e as {code: string}).code === 'P2003') {
             return res.status(409).json({ message: "Cannot delete category with associated products" });
         }
         res.status(500).json({ message: "Could not delete category" });

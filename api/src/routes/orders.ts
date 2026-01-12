@@ -1,6 +1,7 @@
 import { Router, Request } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
+import { Prisma } from "@prisma/client";
 import { generateOtpCode, hashOtp, timingSafeEqualHex } from "../lib/otp";
 import { sendOtpEmail } from "../lib/mailer";
 import { requireAuth, requireRole, requireGuestOrderToken, signGuestOrderToken } from "../middleware/auth";
@@ -52,14 +53,14 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
   const { items } = parsed.data;
 
   try {
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Re-fetch and lock products (or just check stock in transaction)
       // For simplicity, we'll trust computeTotal but we should ideally lock.
       // In Prisma, we can just update and check count, or read first.
 
       let computed;
       try { computed = await computeTotal(items); }
-      catch (e: any) { throw new Error(e.message || "Invalid products"); }
+      catch (e: unknown) { throw new Error((e as Error).message || "Invalid products"); }
 
       // 2. Create Order
       const order = await tx.order.create({
@@ -68,7 +69,7 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
           customerEmail: user.email,
           total: computed.total,
           items: {
-            create: items.map((it: any) => ({
+            create: items.map((it) => ({
               productId: it.productId,
               qty: it.qty,
               priceSnapshot: computed.map.get(it.productId)!.price,
@@ -90,8 +91,8 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
     });
 
     res.status(201).json(result);
-  } catch (e: any) {
-    return res.status(400).json({ message: e.message || "Could not create order" });
+  } catch (e: unknown) {
+    return res.status(400).json({ message: (e as Error).message || "Could not create order" });
   }
 });
 
@@ -152,10 +153,10 @@ ordersRouter.post("/guest", otpLimiter, async (req, res) => {
   const { customerEmail, items } = parsed.data;
 
   try {
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let computed;
       try { computed = await computeTotal(items); }
-      catch (e: any) { throw new Error(e.message || "Invalid products"); }
+      catch (e: unknown) { throw new Error((e as Error).message || "Invalid products"); }
 
       const order = await tx.order.create({
         data: {
@@ -163,7 +164,7 @@ ordersRouter.post("/guest", otpLimiter, async (req, res) => {
           customerEmail,
           total: computed.total,
           items: {
-            create: items.map((it: any) => ({
+            create: items.map((it) => ({
               productId: it.productId,
               qty: it.qty,
               priceSnapshot: computed.map.get(it.productId)!.price,
@@ -212,8 +213,8 @@ ordersRouter.post("/guest", otpLimiter, async (req, res) => {
 
     res.status(201).json({ orderId: order.id, message: "Código enviado (10 min)" });
 
-  } catch (e: any) {
-    return res.status(400).json({ message: e.message || "Could not create order" });
+  } catch (e: unknown) {
+    return res.status(400).json({ message: (e as Error).message || "Could not create order" });
   }
 });
 
