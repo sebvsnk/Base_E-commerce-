@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/auth-context";
 import { listMyOrders, type Order } from "../services/orders";
-import { listAddresses, createAddress, type Address } from "../services/users";
+import { listAddresses, type Address } from "../services/users";
 import { formatCurrency } from "../utils/currency";
 
 export default function ProfilePage() {
@@ -16,9 +16,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({ street: "", city: "", state: "", zip: "", country: "Chile" });
+  // TODO: Address form disabled - needs city/region selector to match backend schema (cityId)
 
   useEffect(() => {
     let cancelled = false;
@@ -48,18 +46,7 @@ export default function ProfilePage() {
     };
   }, [isAuthed]);
 
-  const handleAddAddress = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await createAddress(newAddress);
-      setShowAddressForm(false);
-      setNewAddress({ street: "", city: "", state: "", zip: "", country: "Chile" });
-      const fresh = await listAddresses();
-      setAddresses(fresh);
-    } catch (e: unknown) {
-      alert(getErrorMessage(e) || "Error al guardar dirección");
-    }
-  };
+  // TODO: Implement handleAddAddress with city/region selector before enabling address form
 
   if (!isAuthed) {
     return (
@@ -91,45 +78,19 @@ export default function ProfilePage() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3>Mis Direcciones</h3>
-        <button className="btn btn--small" onClick={() => setShowAddressForm(!showAddressForm)}>
-          {showAddressForm ? "Cancelar" : "Nueva Dirección"}
-        </button>
+        {/* TODO: Address form disabled - requires city/region selector UI to match backend schema */}
+        <p className="muted" style={{ fontSize: 12 }}>Funcionalidad en desarrollo</p>
       </div>
-
-      {showAddressForm && (
-        <form onSubmit={handleAddAddress} className="card" style={{ marginTop: 12, maxWidth: 500 }}>
-          <div className="form-group">
-            <label>Calle y Número</label>
-            <input required value={newAddress.street} onChange={e => setNewAddress({ ...newAddress, street: e.target.value })} />
-          </div>
-          <div className="form-group">
-            <label>Ciudad</label>
-            <input required value={newAddress.city} onChange={e => setNewAddress({ ...newAddress, city: e.target.value })} />
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Región/Estado</label>
-              <input required value={newAddress.state} onChange={e => setNewAddress({ ...newAddress, state: e.target.value })} />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Código Postal</label>
-              <input required value={newAddress.zip} onChange={e => setNewAddress({ ...newAddress, zip: e.target.value })} />
-            </div>
-          </div>
-          <button type="submit" className="btn btn--primary" style={{ marginTop: 12 }}>Guardar</button>
-        </form>
-      )}
 
       <div className="grid" style={{ marginTop: 12, gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))" }}>
         {addresses.map(addr => (
           <div key={addr.id} className="card simple" style={{ border: addr.isDefault ? "1px solid var(--primary)" : undefined }}>
             <p><strong>{addr.street}</strong></p>
-            <p className="muted">{addr.city}, {addr.state}</p>
-            <p className="muted">{addr.zip}, {addr.country}</p>
+            <p className="muted">{addr.zip}</p>
             {addr.isDefault && <span style={{ fontSize: 12, color: "var(--primary)" }}>Predeterminada</span>}
           </div>
         ))}
-        {!loading && addresses.length === 0 && !showAddressForm && <p className="muted">No tienes direcciones guardadas.</p>}
+        {!loading && addresses.length === 0 && <p className="muted">No tienes direcciones guardadas.</p>}
       </div>
 
       <hr style={{ margin: "24px 0", opacity: 0.2 }} />
