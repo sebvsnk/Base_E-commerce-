@@ -8,6 +8,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [run, setRun] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -26,13 +27,17 @@ export default function LoginPage() {
       setError("Password mínimo 6 caracteres");
       return;
     }
+    if (mode === "register" && !run.trim()) {
+      setError("RUN requerido para registro");
+      return;
+    }
 
     try {
       setLoading(true);
       if (mode === "login") {
         await login(email.trim(), password);
       } else {
-        await register(email.trim(), password, fullName.trim() || undefined);
+        await register(run.trim(), email.trim(), password, fullName.trim() || undefined);
       }
       navigate("/profile");
     } catch (e: unknown) {
@@ -49,10 +54,16 @@ export default function LoginPage() {
 
       <form className="card simple form" onSubmit={onSubmit}>
         {mode === "register" && (
-          <div className="form__row">
-            <label className="muted" htmlFor="fullName">Nombre</label>
-            <input id="fullName" className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          </div>
+          <>
+            <div className="form__row">
+              <label className="muted" htmlFor="run">RUN (ej: 12345678-9)</label>
+              <input id="run" className="input" value={run} onChange={(e) => setRun(e.target.value)} placeholder="12345678-9" />
+            </div>
+            <div className="form__row">
+              <label className="muted" htmlFor="fullName">Nombre</label>
+              <input id="fullName" className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </div>
+          </>
         )}
 
         <div className="form__row">

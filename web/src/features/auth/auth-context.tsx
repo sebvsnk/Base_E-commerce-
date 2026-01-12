@@ -9,7 +9,7 @@ type AuthState = {
   isAuthed: boolean;
   role: Role | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName?: string) => Promise<void>;
+  register: (run: string, email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -32,8 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(token);
         setUser(user);
       },
-      register: async (email, password, fullName) => {
-        const { token, user } = await authApi.register(email, password, fullName);
+      register: async (run, email, password, fullName) => {
+        const { token, user } = await authApi.register(run, email, password, fullName);
         saveAuth(token, user);
         setToken(token);
         setUser(user);

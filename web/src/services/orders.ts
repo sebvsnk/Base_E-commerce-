@@ -68,7 +68,7 @@ export async function listMyOrders() {
 }
 
 
-export type AdminOrder = Order & { user?: { id: string; email: string; role: string } | null };
+export type AdminOrder = Order & { user?: { run: string; email: string; role: string } | null };
 
 export async function listAdminOrders() {
   return apiFetch<AdminOrder[]>("/orders");

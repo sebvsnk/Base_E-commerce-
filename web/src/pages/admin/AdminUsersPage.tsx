@@ -8,6 +8,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [run, setRun] = useState("");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
@@ -31,13 +32,14 @@ export default function AdminUsersPage() {
   }, []);
 
   async function onCreate() {
-    if (!email.trim() || !password.trim()) {
-      setError("Email y password son requeridos");
+    if (!run.trim() || !email.trim() || !password.trim()) {
+      setError("RUN, Email y password son requeridos");
       return;
     }
     try {
       setLoading(true);
-      await createUser({ email: email.trim(), password, role, fullName: fullName.trim() || undefined });
+      await createUser({ run: run.trim(), email: email.trim(), password, role, fullName: fullName.trim() || undefined });
+      setRun("");
       setEmail("");
       setFullName("");
       setPassword("");
@@ -53,7 +55,7 @@ export default function AdminUsersPage() {
   async function onToggleActive(u: AdminUser) {
     try {
       setLoading(true);
-      await updateUser(u.id, { isActive: !u.isActive });
+      await updateUser(u.run, { isActive: !u.isActive });
       await refresh();
     } catch (e: unknown) {
       setError(getErrorMessage(e) || "Error actualizando");
@@ -65,7 +67,7 @@ export default function AdminUsersPage() {
   async function onChangeRole(u: AdminUser, newRole: Role) {
     try {
       setLoading(true);
-      await updateUser(u.id, { role: newRole });
+      await updateUser(u.run, { role: newRole });
       await refresh();
     } catch (e: unknown) {
       setError(getErrorMessage(e) || "Error actualizando rol");
@@ -83,7 +85,7 @@ export default function AdminUsersPage() {
     }
     try {
       setLoading(true);
-      await resetUserPassword(u.id, newPass);
+      await resetUserPassword(u.run, newPass);
       await refresh();
       alert("Contraseña actualizada");
     } catch (e: unknown) {
@@ -104,6 +106,10 @@ export default function AdminUsersPage() {
 
       <div className="card simple" style={{ marginTop: 14 }}>
         <h3>Crear usuario</h3>
+        <div className="form__row">
+          <label className="muted">RUN (ej: 12345678-9)</label>
+          <input className="input" value={run} onChange={(e) => setRun(e.target.value)} placeholder="12345678-9" />
+        </div>
         <div className="form__row">
           <label className="muted">Email</label>
           <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@correo.com" />
@@ -134,7 +140,8 @@ export default function AdminUsersPage() {
 
       <div className="cart__list" style={{ marginTop: 10 }}>
         {users.map((u) => (
-          <div key={u.id} className="card simple">
+          <div key={u.run} className="card simple">
+            <div className="summary__row"><span>RUN</span><strong>{u.run}</strong></div>
             <div className="summary__row"><span>Email</span><strong>{u.email}</strong></div>
             <div className="summary__row"><span>Nombre</span><strong>{u.fullName ?? "-"}</strong></div>
             <div className="summary__row"><span>Activo</span><strong>{u.isActive ? "Sí" : "No"}</strong></div>
