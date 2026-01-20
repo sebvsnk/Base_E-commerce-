@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createProduct, uploadImage } from "../../services/products";
 import { getErrorMessage } from "../../utils/error";
 import AdminNav from "./AdminNav";
+import './AdminProductCreatePage.css';
 
 export default function AdminProductCreatePage() {
   const navigate = useNavigate();
@@ -90,99 +91,98 @@ export default function AdminProductCreatePage() {
   }
 
   return (
-    <div className="container">
-      <h1>Crear Nuevo Producto</h1>
-      <AdminNav />
+    <div className="admin-form-page">
+      <div className="admin-form-container">
+        <h1 className="admin-form-title">Crear Nuevo Producto</h1>
 
-      <div style={{ maxWidth: "600px", margin: "20px auto" }}>
         {error && (
-            <div style={{ background: "#fee2e2", color: "#b91c1c", padding: "10px", borderRadius: "8px", marginBottom: "1rem" }}>
+            <div className="admin-form-error">
                 {error}
             </div>
         )}
 
-        <form onSubmit={handleSubmit} className="card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "15px" }}>
+        <form onSubmit={handleSubmit} className="admin-form-card">
             
             {/* Basic Info */}
-            <div>
-                <label className="block text-sm font-medium">Nombre</label>
+            <div className="admin-form-group">
+                <label className="admin-form-label">Nombre</label>
                 <input 
                     type="text" 
                     value={name} 
                     onChange={(e) => setName(e.target.value)} 
-                    className="input"
+                    className="admin-form-input"
                     required
                 />
             </div>
 
-            <div>
-                <label className="block text-sm font-medium">Descripción</label>
+            <div className="admin-form-group">
+                <label className="admin-form-label">Descripción</label>
                 <textarea 
                     value={description} 
                     onChange={(e) => setDescription(e.target.value)} 
-                    className="input"
+                    className="admin-form-textarea"
                     rows={3}
                 />
             </div>
 
              {/* Pricing & Stock */}
-            <div className="grid-2">
-                 <div>
-                    <label className="block text-sm font-medium">Precio</label>
+            <div className="admin-form-grid-2">
+                 <div className="admin-form-group">
+                    <label className="admin-form-label">Precio</label>
                     <input 
                         type="text" 
                         value={price} 
                         onChange={(e) => setPrice(formatPrice(e.target.value))} 
-                        className="input"
+                        className="admin-form-input"
                         placeholder="Ej: 10.000"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium">Stock</label>
+                <div className="admin-form-group">
+                    <label className="admin-form-label">Stock</label>
                     <input 
                         type="number" 
                         value={stock} 
                         onChange={(e) => setStock(e.target.value)} 
-                        className="input"
+                        className="admin-form-input"
                         min="0"
                     />
                 </div>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium">SKU (Opcional)</label>
+            <div className="admin-form-group">
+                <label className="admin-form-label">SKU (Opcional)</label>
                 <input 
                     type="text" 
                     value={sku} 
                     onChange={(e) => setSku(e.target.value)} 
-                    className="input"
+                    className="admin-form-input"
                 />
             </div>
 
             {/* Attributes */}
-            <div>
-                <label className="block text-sm font-medium">Marca (Opcional)</label>
+            <div className="admin-form-group">
+                <label className="admin-form-label">Marca (Opcional)</label>
                 <input 
                     type="text" 
                     value={brand} 
                     onChange={(e) => setBrand(e.target.value)} 
-                    className="input"
+                    className="admin-form-input"
                 />
             </div>
 
             {/* Tags */}
-            <div>
-                <label className="block text-sm font-medium mb-2">Clasificación</label>
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="admin-form-group">
+                <label className="admin-form-label">Clasificación</label>
+                <div className="admin-form-checkbox-group">
+                    <label className="admin-form-checkbox-label">
                         <input type="checkbox" checked={tags.includes('for-her')} onChange={() => toggleTag('for-her')} />
                         Para Ellas
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label className="admin-form-checkbox-label">
                         <input type="checkbox" checked={tags.includes('for-him')} onChange={() => toggleTag('for-him')} />
                         Para Ellos
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label className="admin-form-checkbox-label">
                         <input type="checkbox" checked={tags.includes('accessories')} onChange={() => toggleTag('accessories')} />
                         Accesorios
                     </label>
@@ -190,9 +190,9 @@ export default function AdminProductCreatePage() {
             </div>
 
             {/* Media */}
-            <div>
-                <label className="block text-sm font-medium">Imágenes (La primera será la principal)</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+            <div className="admin-form-group">
+                <label className="admin-form-label">Imágenes (La primera será la principal)</label>
+                <div>
                     <input
                         type="file"
                         id="file-upload"
@@ -203,53 +203,36 @@ export default function AdminProductCreatePage() {
                     />
                     <label 
                         htmlFor="file-upload" 
-                        className="btn" 
-                        style={{ cursor: uploading ? 'wait' : 'pointer', width: '100%', textAlign: 'center' }}
+                        className={`admin-form-file-label ${uploading ? 'uploading' : ''}`}
                     >
                         {uploading ? "Subiendo..." : "Subir Imágenes"}
                     </label>
                 </div>
                 
                 {images.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "10px" }}>
+                    <div className="admin-form-image-grid">
                         {images.map((img, idx) => (
-                            <div key={idx} style={{ position: "relative", border: idx === 0 ? "2px solid var(--primary)" : "1px solid #ddd", borderRadius: "8px", overflow: "hidden" }}>
-                                <img src={img} alt={`Img ${idx}`} style={{ width: "100%", height: "100px", objectFit: "cover" }} />
+                            <div key={idx} className={`admin-form-image-item ${idx === 0 ? 'primary' : ''}`}>
+                                <img src={img} alt={`Img ${idx}`} className="admin-form-image" />
                                 <button 
                                     type="button"
                                     onClick={() => removeImage(idx)}
-                                    style={{ 
-                                        position: "absolute", top: "2px", right: "2px", 
-                                        background: "rgba(255,0,0,0.8)", color: "white", 
-                                        border: "none", borderRadius: "50%", 
-                                        width: "20px", height: "20px", cursor: "pointer",
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        fontSize: "12px"
-                                    }}
+                                    className="admin-form-image-remove"
                                 >
                                     ×
                                 </button>
-                                {idx === 0 && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.5)", color: "white", fontSize: "10px", textAlign: "center" }}>Principal</div>}
+                                {idx === 0 && <div className="admin-form-image-badge">Principal</div>}
                             </div>
                         ))}
                     </div>
                 )}
             </div>
 
-            <button type="submit" className="btn btn--primary" disabled={loading}>
-                {loading ? "Crear Producto" : "Crear Producto"}
+            <button type="submit" className="admin-form-submit" disabled={loading}>
+                {loading ? "Creando..." : "Crear Producto"}
             </button>
         </form>
       </div>
-
-       <style>{`
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        .block { display: block; margin-bottom: 5px; }
-      `}</style>
     </div>
   );
 }

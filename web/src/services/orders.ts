@@ -87,16 +87,3 @@ export async function cancelMyOrder(id: string) {
   return apiFetch<Order>(`/orders/${id}/cancel`, { method: "POST" });
 }
 
-
-export type AdminOrder = Order & { user?: { run: string; email: string; role: string } | null };
-
-export async function listAdminOrders() {
-  return apiFetch<AdminOrder[]>("/orders");
-}
-
-export async function updateOrderStatus(id: string, status: OrderStatus) {
-  return apiFetch<AdminOrder>(`/orders/${id}/status`, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
-  });
-}

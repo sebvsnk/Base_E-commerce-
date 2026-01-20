@@ -97,10 +97,8 @@ export default function AdminUsersPage() {
 
   return (
     <section>
-      <h1>Panel: Usuarios</h1>
-      <p className="muted">Solo Admin puede crear/editar usuarios y roles.</p>
-
-      <AdminNav />
+      <h1>Gestión de Usuarios</h1>
+      
 
       {error && <p className="muted" style={{ marginTop: 12 }}>Error: {error}</p>}
 

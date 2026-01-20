@@ -28,7 +28,7 @@ categoriesRouter.post("/", requireAuth, requireRole("ADMIN", "WORKER"), async (r
 
         await prisma.auditLog.create({
             data: {
-                actorRun: req.user!.run,
+                actorId: req.user!.id,
                 action: "CATEGORY_CREATE",
                 entity: "Category",
                 entityId: category.id,
@@ -62,7 +62,7 @@ categoriesRouter.patch("/:id", requireAuth, requireRole("ADMIN", "WORKER"), asyn
 
         await prisma.auditLog.create({
             data: {
-                actorRun: req.user!.run,
+                actorId: req.user!.id,
                 action: "CATEGORY_UPDATE",
                 entity: "Category",
                 entityId: category.id,
@@ -86,7 +86,7 @@ categoriesRouter.delete("/:id", requireAuth, requireRole("ADMIN", "WORKER"), asy
 
         await prisma.auditLog.create({
             data: {
-                actorRun: req.user!.run,
+                actorId: req.user!.id,
                 action: "CATEGORY_DELETE",
                 entity: "Category",
                 entityId: req.params.id,

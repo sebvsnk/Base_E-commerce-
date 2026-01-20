@@ -38,10 +38,15 @@ export default function CartPage() {
                 <div className="cart__actions">
                   <QuantityControl
                     value={item.qty}
+                    min={0}
                     max={typeof item.stock === "number" ? Math.max(1, item.stock) : 999}
-                    onChange={(next) =>
-                      dispatch({ type: "SET_QTY", payload: { id: item.id, qty: next } })
-                    }
+                    onChange={(next) => {
+                      if (next === 0) {
+                        dispatch({ type: "REMOVE_ITEM", payload: { id: item.id } });
+                      } else {
+                        dispatch({ type: "SET_QTY", payload: { id: item.id, qty: next } });
+                      }
+                    }}
                   />
                   <button
                     className="btn btn--danger btn--ghost"

@@ -1,0 +1,62 @@
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #ffffff;
+  width: 100%;
+  color: #000000;
+}
+
+.admin-layout__content {
+  flex: 1;
+  margin-left: 250px;
+  padding: 2rem;
+  min-height: 100vh;
+  background: #ffffff;
+  width: calc(100% - 250px);
+  color: #000000;
+}
+
+/* Botón hamburguesa */
+.admin-layout__hamburger {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1001;
+  background: #00a99d;
+  border: none;
+  border-radius: 6px;
+  width: 45px;
+  height: 45px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.admin-layout__hamburger span {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+.admin-layout__hamburger:hover {
+  background: #008b82;
+}
+
+@media (max-width: 768px) {
+  .admin-layout__hamburger {
+    display: flex;
+  }
+
+  .admin-layout__content {
+    margin-left: 0;
+    padding: 5rem 1rem 1rem 1rem;
+    width: 100%;
+  }
+}

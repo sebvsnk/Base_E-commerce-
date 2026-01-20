@@ -7,30 +7,55 @@ import QuantityControl from "./QuantityControl";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { dispatch, state } = useCart();
-  const [qtyToAdd, setQtyToAdd] = useState(1);
 
   const hasStock = product.stock > 0;
   const inCartQty = state.items.find((i) => i.id === product.id)?.qty ?? 0;
   
-  // Logic: Can add if cart + qtyToAdd <= stock
-  const canAdd = hasStock && (inCartQty + qtyToAdd <= product.stock);
+  // Logic: Can add if cart < stock
+  const canAdd = hasStock && (inCartQty < product.stock);
   const remainingStock = product.stock - inCartQty;
 
-  const handleAdd = () => {
-     if (canAdd) {
+  const handleUpdateQty = (newQty: number) => {
+    if (newQty === 0) {
+        dispatch({ type: "REMOVE_ITEM", payload: { id: product.id } });
+    } else if (newQty > inCartQty) {
+        // Adding
+        if (canAdd) {
+            dispatch({
+                type: "ADD_ITEM",
+                payload: {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image,
+                    stock: product.stock,
+                    qty: 1
+                }
+            });
+        }
+    } else {
+        // Decreasing (but not to 0)
         dispatch({
-          type: "ADD_ITEM",
-          payload: { 
-            id: product.id, 
-            name: product.name, 
-            price: product.price, 
-            image: product.image, 
-            stock: product.stock,
-            qty: qtyToAdd 
-          },
+            type: "SET_QTY",
+            payload: { id: product.id, qty: newQty }
         });
-        setQtyToAdd(1); // Reset to 1 after adding
-     }
+    }
+  };
+
+  const handleInitialAdd = () => {
+    if (canAdd) {
+        dispatch({
+            type: "ADD_ITEM",
+            payload: {
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                stock: product.stock,
+                qty: 1
+            }
+        });
+    }
   };
 
   return (
@@ -75,25 +100,26 @@ export default function ProductCard({ product }: { product: Product }) {
 
         <div className="card__footer" style={{ marginTop: 'auto', flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
           
-          {hasStock && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>Cantidad:</span>
-              <QuantityControl 
-                value={qtyToAdd} 
-                onChange={setQtyToAdd} 
-                max={remainingStock} 
-              />
-            </div>
+          {inCartQty > 0 ? (
+             <div style={{ width: '100%' }}>
+                <QuantityControl 
+                    value={inCartQty} 
+                    onChange={handleUpdateQty} 
+                    min={0}
+                    max={product.stock} 
+                />
+             </div>
+          ) : (
+             <button
+                className="btn"
+                disabled={!hasStock}
+                onClick={handleInitialAdd}
+                style={{ width: '100%', backgroundColor: '#9333ea', color: 'white' }}
+             >
+                {!hasStock ? "Agotado" : "AÑADIR"}
+             </button>
           )}
 
-          <button
-            className="btn"
-            disabled={!hasStock || !canAdd}
-            onClick={handleAdd}
-            style={{ width: '100%', backgroundColor: '#9e04ac', color: 'white' }}
-          >
-            {!hasStock ? "Agotado" : !canAdd ? "Máximo alcanzado" : "AÑADIR AL CARRITO"}
-          </button>
         </div>
       </div>
     </article>

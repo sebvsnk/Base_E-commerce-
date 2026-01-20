@@ -29,11 +29,8 @@ export default function AdminAuditsPage() {
 
   return (
     <section>
-      <h1>Panel: Auditorías</h1>
-      <p className="muted">Solo Admin. Historial de acciones (productos, usuarios, órdenes).</p>
-
-      <AdminNav />
-
+      <h1>Auditorías</h1>
+    
       <div className="card simple" style={{ marginTop: 14 }}>
         <label className="muted">Cantidad</label>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>

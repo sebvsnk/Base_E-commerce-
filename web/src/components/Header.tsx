@@ -5,6 +5,10 @@ import { useAuth } from "../features/auth/auth-context";
 import { useTheme } from "../hooks/useTheme";
 import { Search, ShoppingCart, User, Menu, X, Sun, Moon } from "lucide-react";
 import logo from "../assets/logoPicara_Blanco.svg";
+import { listPublicProducts, type Product } from "../services/products";
+import { listCategories, type Category } from "../services/categories";
+import { useDebounce } from "use-debounce";
+import { useEffect, useRef } from "react";
 import "./Header.css";
 
 export default function Header() {
@@ -14,14 +18,49 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  const [results, setResults] = useState<Product[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  
   const navigate = useNavigate();
+
+  useEffect(() => {
+    listCategories().then(setCategories).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (debouncedSearchTerm.length >= 1) { // As soon as they type 1 char? user said "segun la letra"
+      listPublicProducts({ q: debouncedSearchTerm, limit: 6 })
+        .then(res => {
+             setResults(res.data || []);
+             setShowResults(true);
+        })
+        .catch(console.error);
+    } else {
+      setResults([]);
+      setShowResults(false);
+    }
+  }, [debouncedSearchTerm]);
+
+  // Hide results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Redirect to home with search query or specific search page
-    // For now, let's just assume we want to filter logically or just log it
-    console.log("Searching for:", searchTerm);
-    // You might want to navigate to /?q=searchTerm
+    setShowResults(false);
     navigate(`/?q=${encodeURIComponent(searchTerm)}`);
   };
 
@@ -44,18 +83,49 @@ export default function Header() {
           </Link>
 
           {/* Search Bar */}
-          <div className="search-bar">
+          <div className="search-bar" ref={searchContainerRef} style={{ position: 'relative' }}>
             <form onSubmit={handleSearch}>
               <input 
                 type="text" 
                 placeholder="¿Qué estás buscando?" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => { if (results.length > 0) setShowResults(true); }}
               />
               <button type="submit">
                 <Search size={20} />
               </button>
             </form>
+            
+            {showResults && results.length > 0 && (
+              <div className="search-results-dropdown">
+                {results.map(product => (
+                  <div 
+                    key={product.id} 
+                    className="search-result-item"
+                    onClick={() => {
+                      navigate(`/product/${product.id}`);
+                      setShowResults(false);
+                      setSearchTerm("");
+                    }}
+                  >
+                    <img src={product.image} alt={product.name} />
+                    <div>
+                      <div className="search-result-name">{product.name}</div>
+                      <div className="search-result-price">${product.price.toLocaleString()}</div>
+                    </div>
+                  </div>
+                ))}
+                <div 
+                  className="search-result-item view-all"
+                  onClick={(e) => {
+                     handleSearch(e as any);
+                  }}
+                >
+                  Ver todos los resultados ({results.length}+)
+                </div>
+              </div>
+            )}
           </div>
 
           {/* User Actions & Mobile Toggle */}
@@ -94,9 +164,8 @@ export default function Header() {
                     )}
                     
                     {(user?.role === "ADMIN" || user?.role === "WORKER") && (
-                       <Link to="/admin/products" className="dropdown-item" onClick={() => setIsUserMenuOpen(false)}>
-                         Panel Admin
-                       </Link>
+                       // Removed Admin Panel Link
+                       null
                     )}
                     
                     <button 
@@ -115,7 +184,6 @@ export default function Header() {
             ) : (
               <Link to="/login" className="user-link">
                 <User size={20} />
-                <span>INICIAR SESIÓN / REGISTRAR</span>
               </Link>
             )}
 
@@ -139,23 +207,60 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Bottom Bar (Navigation) */}
-      <nav className={`site-header__bottom ${isMenuOpen ? "is-open" : ""}`}>
-        <div className="site-header__container" style={{ display: 'block' }}> {/* Override flex for Nav container behavior */}
+      {/* Mobile Sidebar */}
+      <div className={`mobile-overlay ${isMenuOpen ? "open" : ""}`} onClick={() => setIsMenuOpen(false)} />
+      <div className={`mobile-sidebar ${isMenuOpen ? "open" : ""}`}>
+        <div className="mobile-sidebar-header">
+           <img src={logo} alt="Logo" className="side-logo" />
+           <button className="close-btn" onClick={() => setIsMenuOpen(false)}>
+             <X size={24} />
+           </button>
+        </div>
+        <div className="mobile-sidebar-content">
+           <h3 className="mobile-menu-title">Categorías</h3>
+           <ul className="mobile-nav-list">
+             <li className="mobile-nav-item">
+                <Link to="/" onClick={() => setIsMenuOpen(false)}>Ver Todo</Link>
+             </li>
+             {categories.map(cat => (
+               <li key={cat.id} className="mobile-nav-item">
+                 <Link to={`/?category=${cat.id}`} onClick={() => setIsMenuOpen(false)}>
+                   {cat.name}
+                 </Link>
+               </li>
+             ))}
+           </ul>
+           <div className="mobile-divider" />
+           <ul className="mobile-nav-list">
+             {menuItems.map((item) => (
+               <li key={item.label} className="mobile-nav-item">
+                 <NavLink 
+                    to={item.path} 
+                    className={({ isActive }) => isActive ? "active" : ""}
+                    onClick={() => setIsMenuOpen(false)} 
+                 >
+                   {item.label}
+                 </NavLink>
+               </li>
+             ))}
+           </ul>
+        </div>
+      </div>
+
+      {/* Bottom Bar (Desktop Navigation) */}
+      <nav className="site-header__bottom">
+        <div className="site-header__container">
           <ul className="main-nav">
              {menuItems.map((item) => (
                <li key={item.label} className="nav-item">
                  <NavLink 
                     to={item.path} 
                     className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                    onClick={() => setIsMenuOpen(false)} // Close on click
                  >
                    {item.label}
                  </NavLink>
                </li>
              ))}
-
-
           </ul>
         </div>
       </nav>

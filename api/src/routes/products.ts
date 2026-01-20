@@ -36,6 +36,7 @@ productsRouter.get("/", async (req, res) => {
   const categoryId = typeof req.query.categoryId === 'string' ? req.query.categoryId : undefined;
   const tag = typeof req.query.tag === 'string' ? req.query.tag : undefined;
   const brand = typeof req.query.brand === 'string' ? req.query.brand : undefined;
+  const q = typeof req.query.q === 'string' ? req.query.q : undefined;
   
   const minPrice = req.query.minPrice ? Number(req.query.minPrice) : undefined;
   const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : undefined;
@@ -50,6 +51,13 @@ productsRouter.get("/", async (req, res) => {
     ...(categoryId ? { categoryId } : {}),
     ...(tag ? { tags: { has: tag } } : {}),
     ...(brand ? { brand } : {}),
+    ...(q ? {
+      OR: [
+        { name: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { brand: { contains: q, mode: 'insensitive' } }
+      ]
+    } : {}),
     ...(minPrice !== undefined || maxPrice !== undefined ? {
       price: {
         ...(minPrice !== undefined ? { gte: minPrice } : {}),
@@ -135,7 +143,7 @@ productsRouter.post("/", requireAuth, requireRole("ADMIN", "WORKER"), async (req
 
   await prisma.auditLog.create({
     data: {
-      actorRun: req.user!.run,
+      actorId: req.user!.id,
       action: "PRODUCT_CREATE",
       entity: "Product",
       entityId: p.id,
@@ -150,6 +158,20 @@ productsRouter.get("/:id", async (req, res) => {
   const p = await prisma.product.findUnique({ where: { id: req.params.id } });
   if (!p) return res.status(404).json({ message: "Product not found" });
   res.json(p);
+});
+
+// Increment product view count
+productsRouter.post("/:id/view", async (req, res) => {
+  try {
+    await prisma.product.update({
+      where: { id: req.params.id },
+      data: { views: { increment: 1 } }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error incrementing product views:", error);
+    res.status(500).json({ message: "Error registering view" });
+  }
 });
 
 // Editar producto (Admin/Worker)
@@ -189,7 +211,7 @@ productsRouter.patch("/:id", requireAuth, requireRole("ADMIN", "WORKER"), async 
 
   await prisma.auditLog.create({
     data: {
-      actorRun: req.user!.run,
+      actorId: req.user!.id,
       action: "PRODUCT_UPDATE",
       entity: "Product",
       entityId: p.id,
@@ -208,7 +230,7 @@ productsRouter.post("/:id/disable", requireAuth, requireRole("ADMIN", "WORKER"),
   });
 
   await prisma.auditLog.create({
-    data: { actorRun: req.user!.run, action: "PRODUCT_DISABLE", entity: "Product", entityId: p.id },
+    data: { actorId: req.user!.id, action: "PRODUCT_DISABLE", entity: "Product", entityId: p.id },
   });
 
   res.json(p);
@@ -221,7 +243,7 @@ productsRouter.delete("/:id", requireAuth, requireRole("ADMIN"), async (req: Req
     });
 
     await prisma.auditLog.create({
-      data: { actorRun: req.user!.run, action: "PRODUCT_DELETE", entity: "Product", entityId: p.id },
+      data: { actorId: req.user!.id, action: "PRODUCT_DELETE", entity: "Product", entityId: p.id },
     });
 
     res.json({ success: true, id: p.id });

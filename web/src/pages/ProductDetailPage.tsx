@@ -1,7 +1,7 @@
 
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { getProduct, type Product } from "../services/products";
+import { useEffect, useState, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
+import { getProduct, registerProductView, type Product } from "../services/products";
 import { useCart } from "../features/cart/cart-context";
 import { formatCurrency } from "../utils/currency";
 import QuantityControl from "../components/QuantityControl";
@@ -12,10 +12,10 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const viewRegistered = useRef(false);
   
   // Cart logic
   const { dispatch, state } = useCart();
-  const [qtyToAdd, setQtyToAdd] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,6 +25,11 @@ export default function ProductDetailPage() {
       .then(p => {
           setProduct(p);
           setSelectedImage(p.image);
+          // Register view only once
+          if (!viewRegistered.current) {
+            viewRegistered.current = true;
+            registerProductView(id);
+          }
       })
       .catch((err) => setError(getErrorMessage(err) || "Error cargando producto"))
       .finally(() => setLoading(false));
@@ -35,12 +40,13 @@ export default function ProductDetailPage() {
 
   const hasStock = product.stock > 0;
   const inCartQty = state.items.find((i) => i.id === product.id)?.qty ?? 0;
-  const canAdd = hasStock && (inCartQty + qtyToAdd <= product.stock);
-  const remainingStock = product.stock - inCartQty;
   const gallery = (product.images && product.images.length > 0) ? product.images : [product.image];
 
-  const handleAdd = () => {
-    if (canAdd) {
+  const handleQuantityChange = (next: number) => {
+    if (next === 0) {
+      dispatch({ type: "REMOVE_ITEM", payload: { id: product.id } });
+    } else if (inCartQty === 0 && next > 0) {
+      // Adding to cart for the first time
       dispatch({
         type: "ADD_ITEM",
         payload: {
@@ -49,11 +55,12 @@ export default function ProductDetailPage() {
           price: product.price,
           image: product.image,
           stock: product.stock,
-          qty: qtyToAdd,
+          qty: next,
         },
       });
-      setQtyToAdd(1);
-      alert("Producto agregado al carrito");
+    } else {
+      // Update quantity
+      dispatch({ type: "SET_QTY", payload: { id: product.id, qty: next } });
     }
   };
 
@@ -129,15 +136,24 @@ export default function ProductDetailPage() {
              {hasStock && (
                 <div style={{ marginBottom: '30px' }}>
                    <label style={{ display: 'block', marginBottom: '8px' }}>Cantidad:</label>
-                   <QuantityControl value={qtyToAdd} onChange={setQtyToAdd} max={remainingStock} />
+                   <QuantityControl 
+                     value={inCartQty} 
+                     onChange={handleQuantityChange} 
+                     min={0}
+                     max={product.stock} 
+                   />
+                   {inCartQty > 0 && (
+                     <div style={{ marginTop: '10px', fontSize: '0.9rem', color: '#666' }}>
+                       {inCartQty} {inCartQty === 1 ? 'unidad' : 'unidades'} en el carrito
+                     </div>
+                   )}
                 </div>
              )}
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <button 
+                <Link 
+                  to="/cart"
                   className="btn btn--primary" 
-                  disabled={!hasStock || !canAdd}
-                  onClick={handleAdd}
                   style={{ 
                     width: '100%', 
                     padding: '16px', 
@@ -145,11 +161,14 @@ export default function ProductDetailPage() {
                     borderRadius: '50px',
                     backgroundColor: '#372c72',
                     border: 'none',
-                    color: 'white'
+                    color: 'white',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    display: 'block'
                   }}
                 >
-                  {hasStock ? "AÑADIR AL CARRITO" : "AGOTADO"}
-                </button>
+                  VER CARRITO
+                </Link>
              </div>
           </div>
        </div>

@@ -54,10 +54,10 @@ adminRouter.post("/users", async (req: Request, res) => {
 
   await prisma.auditLog.create({
     data: {
-      actorRun: req.user!.run,
+      actorId: req.user!.id,
       action: "USER_CREATE",
       entity: "User",
-      entityId: user.run,
+      entityId: user.id,
       meta: { email: user.email, role: user.role },
     },
   });
@@ -84,10 +84,10 @@ adminRouter.patch("/users/:run", async (req: Request, res) => {
 
   await prisma.auditLog.create({
     data: {
-      actorRun: req.user!.run,
+      actorId: req.user!.id,
       action: "USER_UPDATE",
       entity: "User",
-      entityId: user.run,
+      entityId: user.id,
       meta: parsed.data,
     },
   });
@@ -108,10 +108,10 @@ adminRouter.post("/users/:run/reset-password", async (req: Request, res) => {
 
   await prisma.auditLog.create({
     data: {
-      actorRun: req.user!.run,
+      actorId: req.user!.id,
       action: "USER_PASSWORD_RESET",
       entity: "User",
-      entityId: user.run,
+      entityId: user.id,
       meta: { email: user.email },
     },
   });
@@ -129,4 +129,116 @@ adminRouter.get("/audits", async (req, res) => {
   });
 
   res.json(audits);
+});
+
+// Dashboard metrics endpoint
+adminRouter.get("/dashboard", async (_req, res) => {
+  try {
+    // Get all paid orders
+    const paidOrders = await prisma.order.findMany({
+      where: { status: "PAID" },
+      include: { items: true },
+    });
+
+    // Calculate total sales (sum of quantities)
+    const totalSales = paidOrders.reduce((sum, order) => {
+      return sum + order.items.reduce((itemSum, item) => itemSum + item.qty, 0);
+    }, 0);
+
+    // Calculate total revenue
+    const totalRevenue = paidOrders.reduce((sum, order) => sum + order.total, 0);
+
+    // Total orders
+    const totalOrders = paidOrders.length;
+
+    // Average order value
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Get all products with stock info
+    const allProducts = await prisma.product.findMany({
+      select: { id: true, name: true, stock: true },
+    });
+
+    const productsInStock = allProducts.filter(p => p.stock > 0).length;
+    const lowStockProducts = allProducts.filter(p => p.stock > 0 && p.stock <= 10).length;
+
+    // Calculate product sales and revenue
+    const productSales = new Map<string, { name: string; sku: string | null; sales: number; revenue: number }>();
+
+    for (const order of paidOrders) {
+      for (const item of order.items) {
+        const existing = productSales.get(item.productId) || { name: "", sku: null, sales: 0, revenue: 0 };
+        const product = await prisma.product.findUnique({ where: { id: item.productId } });
+        
+        productSales.set(item.productId, {
+          name: product?.name || "Producto desconocido",
+          sku: product?.sku || null,
+          sales: existing.sales + item.qty,
+          revenue: existing.revenue + (item.priceSnapshot * item.qty),
+        });
+      }
+    }
+
+    // Sort products by sales
+    const sortedProducts = Array.from(productSales.entries())
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => b.sales - a.sales);
+
+    const topProducts = sortedProducts.slice(0, 5);
+    const lowProducts = sortedProducts.slice(-3).reverse();
+
+    // Get most viewed products
+    const mostViewedProducts = await prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { views: 'desc' },
+      take: 5,
+      select: { id: true, name: true, sku: true, views: true }
+    });
+
+    // Get new customers count (users created in last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const newCustomers = await prisma.user.count({
+      where: {
+        role: "CUSTOMER",
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    });
+
+    // Better conversion rate calculation: unique customers who made at least one purchase
+    const totalCustomers = await prisma.user.count({ where: { role: "CUSTOMER" } });
+    
+    // Get unique customers who have at least one paid order
+    const customersWithOrders = await prisma.order.findMany({
+      where: { 
+        status: "PAID",
+        userId: { not: null }
+      },
+      select: { userId: true },
+      distinct: ['userId']
+    });
+    
+    const uniqueCustomersWhoBought = customersWithOrders.length;
+    const conversionRate = totalCustomers > 0 ? (uniqueCustomersWhoBought / totalCustomers) * 100 : 0;
+
+    res.json({
+      metrics: {
+        totalSales,
+        totalRevenue,
+        totalOrders,
+        avgOrderValue,
+        newCustomers,
+        productsInStock,
+        lowStockProducts,
+        conversionRate,
+      },
+      topProducts,
+      lowProducts,
+      mostViewedProducts,
+    });
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({ message: "Error loading dashboard metrics" });
+  }
 });

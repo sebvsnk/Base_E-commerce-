@@ -86,7 +86,7 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
   }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid body" });
 
-  const user = await prisma.user.findUnique({ where: { run: req.user!.run } });
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
   if (!user) return res.status(401).json({ message: "User not found" });
 
   const { items, shippingAddress } = parsed.data;
@@ -117,7 +117,7 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
       // 2. Create Order
       const order = await tx.order.create({
         data: {
-          userRun: user.run,
+          userId: user.id,
           customerEmail: user.email,
           total: computed.total,
           items: {
@@ -144,7 +144,7 @@ ordersRouter.post("/", requireAuth, async (req: Request, res) => {
 // CUSTOMER: mis órdenes
 ordersRouter.get("/me", requireAuth, async (req: Request, res) => {
   const orders = await prisma.order.findMany({
-    where: { userRun: req.user!.run },
+    where: { userId: req.user!.id },
     include: { items: { include: { product: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -155,12 +155,12 @@ ordersRouter.get("/me", requireAuth, async (req: Request, res) => {
 ordersRouter.post("/:id/cancel", requireAuth, async (req: Request, res) => {
   try {
     const order = await prisma.$transaction(async (tx) => {
-      return cancelOrderWithRestock(tx, req.params.id, { userRun: req.user!.run }, "CANCELLED_BY_CUSTOMER");
+      return cancelOrderWithRestock(tx, req.params.id, { userId: req.user!.id }, "CANCELLED_BY_CUSTOMER");
     });
 
     await prisma.auditLog.create({
       data: {
-        actorRun: req.user!.run,
+        actorId: req.user!.id,
         action: "ORDER_CANCEL",
         entity: "Order",
         entityId: order.id,
@@ -245,7 +245,7 @@ ordersRouter.patch("/:id/status", requireAuth, requireRole("ADMIN", "WORKER"), a
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     await prisma.auditLog.create({
-      data: { actorRun: req.user!.run, action: "ORDER_STATUS_UPDATE", entity: "Order", entityId: order.id, meta: { status: parsed.data.status } },
+      data: { actorId: req.user!.id, action: "ORDER_STATUS_UPDATE", entity: "Order", entityId: order.id, meta: { status: parsed.data.status } },
     });
 
     res.json(order);
@@ -292,7 +292,6 @@ ordersRouter.post("/guest", otpLimiter, async (req, res) => {
 
       const order = await tx.order.create({
         data: {
-          userRun: null,
           customerEmail,
           total: computed.total,
           items: {

@@ -8,6 +8,7 @@ import { usersRouter } from "./users";
 import { webpayRouter } from "./webpay";
 import { locationsRouter } from "./locations";
 import { uploadRouter } from "./upload";
+import { mediaRouter } from "./media";
 
 export const apiRouter = Router();
 
@@ -22,3 +23,4 @@ apiRouter.use("/users", usersRouter);
 apiRouter.use("/locations", locationsRouter);
 apiRouter.use("/webpay", webpayRouter);
 apiRouter.use("/upload", uploadRouter);
+apiRouter.use("/media", mediaRouter);

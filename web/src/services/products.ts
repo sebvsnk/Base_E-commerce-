@@ -22,6 +22,7 @@ export type ProductFilters = {
   categoryId?: string;
   tag?: string;
   brand?: string;
+  q?: string;
   minPrice?: number;
   maxPrice?: number;
   sort?: string;
@@ -42,6 +43,7 @@ export async function listPublicProducts(filters: ProductFilters = {}) {
   if (filters.limit) query.append("limit", String(filters.limit));
   if (filters.categoryId) query.append("categoryId", filters.categoryId);
   if (filters.tag) query.append("tag", filters.tag);
+  if (filters.q) query.append("q", filters.q);
   
   if (filters.brand) query.append("brand", filters.brand);
   if (filters.minPrice !== undefined) query.append("minPrice", String(filters.minPrice));
@@ -51,33 +53,19 @@ export async function listPublicProducts(filters: ProductFilters = {}) {
   return apiFetch<PaginatedResponse<Product>>(`/products?${query.toString()}`);
 }
 
-export async function listAdminProducts(page = 1, limit = 20) {
-  const query = new URLSearchParams({ page: String(page), limit: String(limit) });
-  return apiFetch<PaginatedResponse<Product>>(`/products/admin/all?${query.toString()}`);
-}
-
-export async function createProduct(input: Partial<Pick<Product, "name" | "description" | "price" | "image" | "stock" | "brand" | "sku" | "weight" | "categoryId" | "tags">>) {
-  return apiFetch<Product>("/products", { method: "POST", body: JSON.stringify(input) });
-}
-
-export async function updateProduct(
-  id: string,
-  input: Partial<Pick<Product, "name" | "description" | "price" | "image" | "stock" | "isActive" | "brand" | "sku" | "weight" | "categoryId" | "tags">>
-) {
-  return apiFetch<Product>(`/products/${id}`, { method: "PATCH", body: JSON.stringify(input) });
-}
-
-export async function disableProduct(id: string) {
-  return apiFetch<Product>(`/products/${id}/disable`, { method: "POST" });
-}
-
-export async function deleteProduct(id: string) {
-  return apiFetch<{ success: boolean; id: string }>(`/products/${id}`, { method: "DELETE" });
-}
 
 
 export async function getProduct(id: string) {
   return apiFetch<Product>(`/products/${id}`);
+}
+
+export async function registerProductView(id: string): Promise<void> {
+  try {
+    await apiFetch(`/products/${id}/view`, { method: 'POST' });
+  } catch (error) {
+    // Silently fail - view tracking is not critical
+    console.error('Failed to register product view:', error);
+  }
 }
 
 export async function uploadImage(file: File) {

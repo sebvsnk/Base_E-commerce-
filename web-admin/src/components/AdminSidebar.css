@@ -1,0 +1,133 @@
+.admin-sidebar {
+  width: 250px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #a92700 0%, #008b82 100%);
+  color: white;
+  padding: 1rem;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+}
+
+/* Overlay oscuro para móvil */
+.admin-sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .admin-sidebar-overlay {
+    display: block;
+  }
+}
+
+.admin-sidebar__header {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  margin-bottom: 1.5rem;
+}
+
+.admin-sidebar__header h2 {
+  font-size: 1.25rem;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.admin-sidebar__user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-sidebar__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.admin-sidebar__username {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.admin-sidebar__role {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.admin-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-sidebar__link:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.admin-sidebar__link.active {
+  background: rgba(255,255,255,0.25);
+  font-weight: 600;
+}
+
+.admin-sidebar__icon {
+  font-size: 1.25rem;
+  width: 24px;
+  display: inline-block;
+}
+
+.admin-sidebar__logout {
+  margin-top: auto;
+  opacity: 0.9;
+}
+
+.admin-sidebar__logout:hover {
+  background: rgba(255,255,255,0.2);
+  opacity: 1;
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .admin-sidebar {
+  background: linear-gradient(180deg, #00a99d 0%, #007870 100%);
+}
